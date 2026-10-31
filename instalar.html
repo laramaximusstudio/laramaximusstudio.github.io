@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Maximus Studio · Instalar</title>
+<meta name="theme-color" content="#060507">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Maximus">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icone-192.png">
+<link rel="apple-touch-icon" href="icone.png">
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:#060507;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;padding:28px 20px}
+img{width:132px;height:132px;border-radius:30px;box-shadow:0 10px 40px #ff2d8755}
+h1{margin:6px 0 0;font-size:24px;letter-spacing:.08em}
+h1 span{color:#ff2d87}
+.sub{margin:0;color:#ff8fbf;font-size:13px;letter-spacing:.3em;font-weight:700}
+button,a.btn{display:block;width:100%;max-width:340px;border:0;border-radius:999px;padding:16px;font-size:17px;font-weight:800;cursor:pointer;text-decoration:none;font-family:inherit}
+#inst{background:#ff2d87;color:#fff;margin-top:10px}
+a.btn{background:#1d1a20;color:#fff;border:1px solid #2c2830}
+.passo{max-width:340px;background:#141216;border:1px solid #2c2830;border-radius:18px;padding:16px;text-align:left;font-size:15px;line-height:1.5;color:#d9d0d7}
+.passo b{color:#fff}
+.ok{color:#3ddc97;font-weight:700}
+</style>
+</head>
+<body>
+<img src="icone-512.png" alt="Ícone Maximus Studio">
+<h1>MAXIMUS <span>STUDIO</span></h1>
+<p class="sub">ESPAÇO PERSONALIZADO</p>
+<button id="inst" hidden>Instalar na tela inicial</button>
+<div class="passo" id="manual">
+  Para colocar o ícone na tela do celular:<br>
+  1. Toque nos <b>três pontinhos</b> do Chrome (canto de cima).<br>
+  2. Toque em <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.<br>
+  3. Confirme em <b>Instalar</b>.
+</div>
+<p class="ok" id="done" hidden>✓ Instalado! Procure o ícone Maximus na tela do celular.</p>
+<a class="btn" href="https://claude.ai/artifact/NsH5SxdrmfjWdWmF5i2Lgq">Abrir o app agora</a>
+<script>
+let ev=null;
+window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();ev=e;document.getElementById("inst").hidden=false;document.getElementById("manual").hidden=true});
+document.getElementById("inst").onclick=async()=>{if(!ev)return;ev.prompt();const r=await ev.userChoice;if(r.outcome==="accepted"){document.getElementById("inst").hidden=true;document.getElementById("done").hidden=false}ev=null};
+window.addEventListener("appinstalled",()=>{document.getElementById("inst").hidden=true;document.getElementById("manual").hidden=true;document.getElementById("done").hidden=false});
+</script>
+</body>
+</html>
