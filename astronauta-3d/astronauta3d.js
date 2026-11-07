@@ -1,6 +1,9 @@
 /* Mascote 3D: astronauta Wyguivan Reyller (Equipe Maximus · MyBroker).
    Modelo 3D montado em tempo real (three.js) com esqueleto: flutua, acena, segura a bandeira
    com a mão fechada no mastro, pousa, fica em pé e caminha de verdade.
+   Versão realista: proporção adulta, trama de tecido na roupa, viseira dourada espelhada
+   (reflete a Terra e o sol), bolha de vidro, lanternas no capacete, painel de controle no peito,
+   propulsores na mochila e anel holográfico quando ele pousa.
    O logo MyBroker é um patch aplicado na roupa (acompanha a curva, a luz e a costura).
    Se o 3D não puder rodar, /astro-boot.js carrega o astronauta antigo (2D). */
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js";
@@ -47,9 +50,32 @@ const FLAG_DRAW = {
   br(g, w, h) { g.fillStyle = "#009c3b"; g.fillRect(0, 0, w, h); g.fillStyle = "#ffdf00"; g.beginPath(); g.moveTo(w / 2, h * .1); g.lineTo(w * .92, h / 2); g.lineTo(w / 2, h * .9); g.lineTo(w * .08, h / 2); g.closePath(); g.fill(); g.fillStyle = "#002776"; g.beginPath(); g.arc(w / 2, h / 2, h * .235, 0, 7); g.fill(); g.strokeStyle = "#fff"; g.lineWidth = h * .045; g.beginPath(); g.arc(w / 2, h * .83, h * .42, -2.05, -1.1); g.stroke(); },
   us(g, w, h) { for (let i = 0; i < 13; i++) { g.fillStyle = i % 2 ? "#fff" : "#b22234"; g.fillRect(0, i * h / 13, w, h / 13 + 1); } g.fillStyle = "#3c3b6e"; g.fillRect(0, 0, w * .42, h * 7 / 13); g.fillStyle = "#fff"; for (let r = 0; r < 5; r++) for (let c = 0; c < 6; c++) { g.beginPath(); g.arc(w * .035 + c * w * .068 + (r % 2) * w * .034, h * .06 + r * h * .1, h * .018, 0, 7); g.fill(); } },
   pt(g, w, h) { g.fillStyle = "#ff0000"; g.fillRect(0, 0, w, h); g.fillStyle = "#006600"; g.fillRect(0, 0, w * .4, h); g.strokeStyle = "#ffe000"; g.lineWidth = h * .06; g.beginPath(); g.arc(w * .4, h / 2, h * .2, 0, 7); g.stroke(); g.fillStyle = "#ff0000"; g.strokeStyle = "#fff"; g.lineWidth = h * .03; g.beginPath(); g.moveTo(w * .33, h * .38); g.lineTo(w * .47, h * .38); g.lineTo(w * .47, h * .55); g.quadraticCurveTo(w * .47, h * .65, w * .4, h * .68); g.quadraticCurveTo(w * .33, h * .65, w * .33, h * .55); g.closePath(); g.fill(); g.stroke(); },
+  ae(g, w, h) { g.fillStyle = "#00732f"; g.fillRect(0, 0, w, h / 3); g.fillStyle = "#ffffff"; g.fillRect(0, h / 3, w, h / 3); g.fillStyle = "#000000"; g.fillRect(0, h * 2 / 3, w, h / 3 + 1); g.fillStyle = "#ff0000"; g.fillRect(0, 0, w * 0.26, h); },
   py(g, w, h) { g.fillStyle = "#d52b1e"; g.fillRect(0, 0, w, h / 3); g.fillStyle = "#fff"; g.fillRect(0, h / 3, w, h / 3); g.fillStyle = "#0038a8"; g.fillRect(0, h * 2 / 3, w, h / 3 + 1); g.strokeStyle = "#2c7a2c"; g.lineWidth = h * .035; g.beginPath(); g.arc(w / 2, h / 2, h * .12, 0, 7); g.stroke(); g.fillStyle = "#f5c400"; g.beginPath(); g.arc(w / 2, h / 2, h * .04, 0, 7); g.fill(); },
 };
 
+/* trama de tecido Ortho-Fabric (relevo fino da roupa) */
+function weaveTex() {
+  const t = canvasTex(256, 256, (g, w, h) => {
+    const img = g.createImageData(w, h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const wx = Math.sin(x * 0.785) * Math.sin(y * 0.392), wy = Math.sin(y * 0.785) * Math.sin(x * 0.392 + 1.57);
+      const n = 128 + 34 * ((x >> 2) + (y >> 2) & 1 ? wx : wy) + (Math.random() - 0.5) * 26;
+      const i = (y * w + x) * 4; img.data[i] = img.data[i + 1] = img.data[i + 2] = n; img.data[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+  }, false);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(7, 7); return t;
+}
+/* Terra vista do espaço (aparece refletida na viseira) */
+function earthTex() {
+  return canvasTex(256, 128, (g, w, h) => {
+    const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, "#0d3f8f"); gr.addColorStop(0.5, "#1f6fd0"); gr.addColorStop(1, "#0a2f6e");
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.fillStyle = "#2f8f4e"; for (let i = 0; i < 9; i++) { g.beginPath(); g.ellipse(Math.random() * w, h * 0.25 + Math.random() * h * 0.5, 10 + Math.random() * 28, 6 + Math.random() * 14, Math.random() * 3, 0, 7); g.fill(); }
+    g.fillStyle = "rgba(255,255,255,.75)"; for (let i = 0; i < 26; i++) { g.beginPath(); g.ellipse(Math.random() * w, Math.random() * h, 8 + Math.random() * 30, 2 + Math.random() * 5, Math.random() * 0.6 - 0.3, 0, 7); g.fill(); }
+  });
+}
 function makeEnv(renderer) {
   const pm = new THREE.PMREMGenerator(renderer);
   const sc = new THREE.Scene(); sc.background = new THREE.Color(0x0c0c10);
@@ -59,10 +85,17 @@ function makeEnv(renderer) {
   panel(4, 5, 0xff7a1a, 4, [-5, 1, -2]);
   panel(4, 2, 0x9fb7ff, 1.6, [-4, 2.5, 5]);
   panel(14, 14, 0x16161c, 1, [0, -6, 0]);
+  panel(9, 5, 0xffe2b8, 1.1, [-1.5, 2.6, 7]);
+  panel(5, 3, 0xff9a3c, 1.4, [3.5, 0.5, 6]);
+  const earth = new THREE.Mesh(new THREE.SphereGeometry(2.2, 32, 20), new THREE.MeshBasicMaterial({ map: earthTex() }));
+  earth.position.set(3.2, -1.2, 6.5); sc.add(earth);
+  const sun = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xfff2d8).multiplyScalar(14) }));
+  sun.position.set(-3.5, 3.2, 6); sc.add(sun);
   const t = pm.fromScene(sc, 0.02).texture; pm.dispose(); return t;
 }
 
 export function createAstronaut(canvas, opts = {}) {
+  const WEAVE = weaveTex();
   const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, premultipliedAlpha: true, preserveDrawingBuffer: !!opts.preserve, powerPreference: "high-performance" });
   renderer.setClearColor(0x000000, 0);
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
@@ -78,14 +111,19 @@ export function createAstronaut(canvas, opts = {}) {
 
   /* materiais */
   const M = {
-    suit: new THREE.MeshPhysicalMaterial({ color: 0xf1f2f5, roughness: 0.58, sheen: 0.6, sheenRoughness: 0.7, sheenColor: 0xffffff, clearcoat: 0.25, clearcoatRoughness: 0.5 }),
+    suit: new THREE.MeshPhysicalMaterial({ color: 0xeeeff1, roughness: 0.7, bumpMap: WEAVE, bumpScale: 1.4, sheen: 0.6, sheenRoughness: 0.7, sheenColor: 0xffffff, clearcoat: 0.25, clearcoatRoughness: 0.5 }),
     shell: new THREE.MeshPhysicalMaterial({ color: 0xf6f7f9, roughness: 0.28, clearcoat: 0.9, clearcoatRoughness: 0.15 }),
-    soft: new THREE.MeshPhysicalMaterial({ color: 0xaeb4bf, roughness: 0.75, sheen: 0.4, sheenColor: 0xdfe4ee }),
+    soft: new THREE.MeshPhysicalMaterial({ color: 0xb4b8c0, roughness: 0.78, bumpMap: WEAVE, bumpScale: 0.9, sheen: 0.4, sheenColor: 0xdfe4ee }),
     dark: new THREE.MeshStandardMaterial({ color: 0x2b2d33, roughness: 0.6, metalness: 0.2 }),
     orange: new THREE.MeshPhysicalMaterial({ color: 0xff6a00, roughness: 0.42, clearcoat: 0.5, emissive: 0x3a1200 }),
     gold: new THREE.MeshStandardMaterial({ color: 0xd9a64a, metalness: 1, roughness: 0.22 }),
-    visor: new THREE.MeshPhysicalMaterial({ color: 0x141d36, metalness: 0.92, roughness: 0.05, envMapIntensity: 1.8, iridescence: 0.55, iridescenceIOR: 1.6, clearcoat: 1 }),
-    glove: new THREE.MeshPhysicalMaterial({ color: 0xeceef2, roughness: 0.62, sheen: 0.5, sheenColor: 0xffffff }),
+    visor: new THREE.MeshPhysicalMaterial({ color: 0xc9953f, metalness: 1, roughness: 0.05, envMapIntensity: 1.6, iridescence: 0.35, iridescenceIOR: 1.5, clearcoat: 1, clearcoatRoughness: 0.02 }),
+    bubble: new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 0, roughness: 0.02, transmission: 1, thickness: 0.02, transparent: true, opacity: 0.18, envMapIntensity: 1.4, depthWrite: false }),
+    metal: new THREE.MeshStandardMaterial({ color: 0x9aa0aa, metalness: 1, roughness: 0.3 }),
+    lens: new THREE.MeshBasicMaterial({ color: 0xfff1d6 }),
+    btnR: new THREE.MeshStandardMaterial({ color: 0xd8341f, roughness: 0.4, emissive: 0x3a0800 }),
+    btnB: new THREE.MeshStandardMaterial({ color: 0x2b55d9, roughness: 0.4, emissive: 0x05102e }),
+    glove: new THREE.MeshPhysicalMaterial({ color: 0xe6e8ec, roughness: 0.66, bumpMap: WEAVE, bumpScale: 0.8, sheen: 0.5, sheenColor: 0xffffff }),
     pole: new THREE.MeshStandardMaterial({ color: 0xdfe2e8, metalness: 0.85, roughness: 0.25 }),
     light: new THREE.MeshBasicMaterial({ color: 0xffb066 }),
   };
@@ -97,7 +135,7 @@ export function createAstronaut(canvas, opts = {}) {
 
   const root = grp(scene);
   const body = grp(root, [0, 0, 0], "YXZ");
-  const hips = grp(body, [0, 0.79, 0], "YXZ");
+  const hips = grp(body, [0, 0.9, 0], "YXZ");
   add(hips, cap(0.22, 0.12), M.suit, [0, 0, 0], [0, 0, H], [1, 1.15, 0.9]);
   add(hips, ring(0.255, 0.035), M.orange, [0, 0.07, 0], [H, 0, 0], [1.08, 0.86, 1]);
   const spine = grp(hips, [0, 0.08, 0], "YXZ");
@@ -110,6 +148,13 @@ export function createAstronaut(canvas, opts = {}) {
   // costuras/listras do tronco
   add(torso, ring(0.291, 0.012), M.orange, [0, -0.115, 0], [H, 0, 0]);
   add(torso, ring(0.291, 0.012), M.soft, [0, 0.135, 0], [H, 0, 0]);
+  // painel de controle (DCM) na barriga, com botões
+  const dcm = add(spine, new THREE.BoxGeometry(0.3, 0.1, 0.07), M.shell, [0, 0.1, 0.255], [-0.15, 0, 0]);
+  add(dcm, new THREE.BoxGeometry(0.31, 0.012, 0.075), M.dark, [0, -0.05, 0]);
+  [[-0.1, M.btnR], [-0.035, M.metal], [0.035, M.metal], [0.1, M.btnB]].forEach(([x, m]) => add(dcm, new THREE.CylinderGeometry(0.017, 0.017, 0.02, 16), m, [x, 0.01, 0.04], [H, 0, 0]));
+  add(dcm, new THREE.BoxGeometry(0.07, 0.03, 0.006), M.lens, [0, 0.03, 0.037]);
+  // conexões de fluido no peito
+  for (const s of [-1, 1]) add(spine, new THREE.CylinderGeometry(0.03, 0.03, 0.035, 16), M.orange, [s * 0.17, 0.2, 0.24], [H + 0.2, 0, 0]);
   // gola
   add(spine, ring(0.2, 0.06), M.soft, [0, 0.68, 0], [H, 0, 0], [1, 0.92, 1]);
   add(spine, ring(0.215, 0.022), M.orange, [0, 0.715, 0], [H, 0, 0], [1, 0.92, 1]);
@@ -121,24 +166,36 @@ export function createAstronaut(canvas, opts = {}) {
   add(pack, new THREE.CylinderGeometry(0.07, 0.07, 0.42, 20), M.soft, [-0.17, -0.02, -0.08]);
   add(pack, new THREE.CylinderGeometry(0.07, 0.07, 0.42, 20), M.soft, [0.17, -0.02, -0.08]);
   add(pack, new THREE.SphereGeometry(0.025, 12, 8), M.light, [0.16, 0.22, 0.05]);
+  // propulsores da mochila (soltam jatos de luz quando ele flutua)
+  const spriteTex = canvasTex(64, 64, (g) => { const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.3, "rgba(255,190,110,.9)"); gr.addColorStop(1, "rgba(255,106,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); });
+  const NP = 40, jetGeo = new THREE.BufferGeometry(), jetPos = new Float32Array(NP * 3), jetCol = new Float32Array(NP * 3);
+  jetGeo.setAttribute("position", new THREE.BufferAttribute(jetPos, 3)); jetGeo.setAttribute("color", new THREE.BufferAttribute(jetCol, 3));
+  const jets = new THREE.Points(jetGeo, new THREE.PointsMaterial({ size: 0.17, map: spriteTex, vertexColors: true, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, sizeAttenuation: true }));
+  pack.add(jets);
+  for (const s of [-1, 1]) add(pack, new THREE.CylinderGeometry(0.035, 0.05, 0.06, 16), M.metal, [s * 0.13, -0.33, -0.02]);
   // mangueira
   const hose = new THREE.TubeGeometry(new THREE.CatmullRomCurve3([new THREE.Vector3(0.24, 0.45, -0.15), new THREE.Vector3(0.36, 0.3, 0.05), new THREE.Vector3(0.22, 0.18, 0.24), new THREE.Vector3(0.1, 0.22, 0.27)]), 24, 0.028, 10);
   add(spine, hose, M.soft);
   // cabeça / capacete
   const head = grp(spine, [0, 0.72, 0], "YXZ");
-  const R = 0.44;
-  add(head, new THREE.SphereGeometry(R, 48, 36), M.shell, [0, 0.33, 0]);
-  const visorG = grp(head, [0, 0.35, 0]); visorG.scale.set(1.1, 1.0, 1.04);
+  const R = 0.345;
+  add(head, new THREE.SphereGeometry(R, 48, 36), M.shell, [0, 0.27, 0]);
+  const visorG = grp(head, [0, 0.28, 0]); visorG.scale.set(1.1, 1.0, 1.04);
   const VA = 0.82;
   add(visorG, new THREE.SphereGeometry(R + 0.006, 48, 24, 0, Math.PI * 2, 0, VA), M.visor, [0, 0, 0], [H, 0, 0]);
   add(visorG, new THREE.TorusGeometry((R + 0.006) * Math.sin(VA), 0.034, 14, 64), M.gold, [0, 0, (R + 0.006) * Math.cos(VA)]);
   add(visorG, new THREE.TorusGeometry((R + 0.006) * Math.sin(VA) + 0.045, 0.02, 10, 64), M.shell, [0, 0, (R + 0.006) * Math.cos(VA) - 0.02]);
+  // bolha externa transparente (vidro) sobre a viseira dourada
+  add(visorG, new THREE.SphereGeometry(R + 0.03, 40, 20, 0, Math.PI * 2, 0, VA + 0.08), M.bubble, [0, 0, 0], [H, 0, 0]);
   for (const s of [-1, 1]) {
-    add(head, new THREE.CylinderGeometry(0.12, 0.12, 0.08, 28), M.soft, [s * 0.43, 0.32, 0], [0, 0, H]);
-    add(head, ring(0.1, 0.018), M.orange, [s * 0.475, 0.32, 0], [0, H, 0]);
+    add(head, new THREE.CylinderGeometry(0.085, 0.085, 0.07, 28), M.soft, [s * 0.335, 0.27, 0], [0, 0, H]);
+    add(head, ring(0.07, 0.014), M.orange, [s * 0.372, 0.27, 0], [0, H, 0]);
+    // lanternas do capacete (EVA)
+    const lamp = add(head, new THREE.BoxGeometry(0.075, 0.075, 0.13), M.shell, [s * 0.255, 0.5, 0.08], [0.15, 0, s * -0.35]);
+    add(lamp, new THREE.CylinderGeometry(0.026, 0.026, 0.01, 20), M.lens, [0, 0, 0.068], [H, 0, 0]);
+    add(lamp, new THREE.BoxGeometry(0.08, 0.012, 0.135), M.orange, [0, 0.03, 0]);
   }
-  add(head, new THREE.CylinderGeometry(0.012, 0.012, 0.16, 8), M.pole, [0.22, 0.8, -0.08], [0, 0, -0.25]);
-  const beacon = add(head, new THREE.SphereGeometry(0.03, 12, 10), M.light, [0.24, 0.88, -0.08]);
+  const beacon = add(head, new THREE.SphereGeometry(0.018, 12, 10), M.light, [0, 0.615, -0.05]);
 
   /* braços (s = +1: esquerdo do astronauta, lado direito da tela) */
   function finger(parent, base, side, len, r) {
@@ -153,11 +210,13 @@ export function createAstronaut(canvas, opts = {}) {
   function arm(s) {
     const sh = grp(spine, [s * 0.37, 0.52, 0], "ZYX");
     add(sh, new THREE.SphereGeometry(0.135, 24, 18), M.suit, [0, -0.02, 0]);
-    add(sh, cap(0.105, 0.16), M.suit, [0, -0.16, 0]);
-    add(sh, ring(0.108, 0.02), M.orange, [0, -0.1, 0], [H, 0, 0]);
-    const el = grp(sh, [0, -0.31, 0], "YXZ");
+    add(sh, cap(0.1, 0.18), M.suit, [0, -0.17, 0]);
+    add(sh, ring(0.104, 0.02), M.orange, [0, -0.1, 0], [H, 0, 0]);
+    const el = grp(sh, [0, -0.33, 0], "YXZ");
     for (let i = 0; i < 3; i++) add(el, ring(0.1 - i * 0.004, 0.022), M.soft, [0, 0.02 - i * 0.04, 0], [H, 0, 0]);
-    add(el, cap(0.1, 0.13), M.suit, [0, -0.14, 0]);
+    add(el, cap(0.095, 0.14), M.suit, [0, -0.14, 0]);
+    // espelho/checklist de punho (como nos trajes da NASA)
+    if (s === -1) add(el, new THREE.BoxGeometry(0.1, 0.06, 0.012), M.metal, [0, -0.2, 0.1], [0, 0, 0]);
     add(el, ring(0.104, 0.032), M.orange, [0, -0.25, 0], [H, 0, 0]);
     const wr = grp(el, [0, -0.29, 0], "YXZ");
     add(wr, new THREE.SphereGeometry(0.095, 20, 16), M.glove, [0, -0.07, 0], [0, 0, 0], [0.75, 0.95, 1.12]);
@@ -169,13 +228,13 @@ export function createAstronaut(canvas, opts = {}) {
     let flag = null;
     if (s === 1) {
       const pole = grp(wr, [0, 0, 0]);
-      add(pole, new THREE.CylinderGeometry(0.019, 0.019, 1.25, 14), M.pole, [0, 0.42, 0]);
-      add(pole, new THREE.SphereGeometry(0.04, 16, 12), M.gold, [0, 1.06, 0]);
+      add(pole, new THREE.CylinderGeometry(0.019, 0.019, 1.08, 14), M.pole, [0, 0.36, 0]);
+      add(pole, new THREE.SphereGeometry(0.04, 16, 12), M.gold, [0, 0.92, 0]);
       const fg = new THREE.PlaneGeometry(0.62, 0.42, 24, 12); fg.translate(0.31, 0, 0);
       const base = fg.attributes.position.array.slice();
       const textures = {}; for (const k in FLAG_DRAW) textures[k] = canvasTex(256, 172, FLAG_DRAW[k]);
       const fm = new THREE.MeshPhysicalMaterial({ map: textures.br, side: THREE.DoubleSide, roughness: 0.75, sheen: 0.6, sheenColor: 0xffffff });
-      const swivel = grp(pole, [0, 0.8, 0]); const cloth = add(swivel, fg, fm, [0.02, 0, 0]);
+      const swivel = grp(pole, [0, 0.68, 0]); const cloth = add(swivel, fg, fm, [0.02, 0, 0]);
       flag = { pole, swivel, cloth, geo: fg, base, textures, mat: fm };
     }
     return { s, sh, el, wr, fingers, thumb, flag };
@@ -185,20 +244,26 @@ export function createAstronaut(canvas, opts = {}) {
   /* pernas */
   function leg(s) {
     const hp = grp(hips, [s * 0.15, -0.04, 0], "XZY");
-    add(hp, cap(0.13, 0.13), M.suit, [0, -0.15, 0]);
-    const kn = grp(hp, [0, -0.31, 0], "XYZ");
+    add(hp, cap(0.13, 0.16), M.suit, [0, -0.18, 0]);
+    add(hp, ring(0.132, 0.012), M.soft, [0, -0.08, 0], [H, 0, 0]);
+    const kn = grp(hp, [0, -0.37, 0], "XYZ");
     for (let i = 0; i < 3; i++) add(kn, ring(0.122 - i * 0.004, 0.024), M.soft, [0, 0.03 - i * 0.045, 0], [H, 0, 0]);
-    add(kn, cap(0.125, 0.1), M.suit, [0, -0.13, 0]);
-    add(kn, ring(0.128, 0.03), M.orange, [0, -0.22, 0], [H, 0, 0]);
-    const an = grp(kn, [0, -0.29, 0], "XYZ");
+    add(kn, cap(0.12, 0.14), M.suit, [0, -0.16, 0]);
+    add(kn, ring(0.124, 0.03), M.orange, [0, -0.28, 0], [H, 0, 0]);
+    const an = grp(kn, [0, -0.35, 0], "XYZ");
     add(an, new THREE.SphereGeometry(0.15, 24, 18), M.shell, [0, -0.04, 0.05], [0, 0, 0], [1, 0.72, 1.5]);
-    add(an, new THREE.CylinderGeometry(0.15, 0.15, 0.04, 28), M.dark, [0, -0.12, 0.05], [0, 0, 0], [1, 1, 1.5]);
+    add(an, new THREE.CylinderGeometry(0.15, 0.155, 0.045, 28), M.dark, [0, -0.12, 0.05], [0, 0, 0], [1, 1, 1.5]);
+    for (let i = 0; i < 3; i++) add(an, new THREE.BoxGeometry(0.16, 0.012, 0.02), M.orange, [0, 0.0 - i * 0.03, 0.17 + i * 0.012], [0.5, 0, 0]);
     return { hp, kn, an };
   }
   const legL = leg(1), legR = leg(-1);
 
-  // sombra de contato (quando em pé)
+  // sombra de contato e anel holográfico (quando em pé)
   const shadowTex = canvasTex(128, 128, (g, w, h) => { const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, "rgba(0,0,0,.55)"); gr.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  const holo = grp(scene, [0, 0.006, 0.02]);
+  const holoMat = new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+  const holoRings = [0, 1, 2].map((i) => add(holo, new THREE.RingGeometry(0.42 + i * 0.001, 0.445, 72), holoMat.clone(), [0, 0, 0], [-H, 0, 0]));
+  const holoTicks = add(holo, new THREE.RingGeometry(0.5, 0.56, 48, 1, 0, Math.PI * 2), new THREE.MeshBasicMaterial({ color: 0xffa23a, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, wireframe: true }), [0, 0, 0], [-H, 0, 0]);
   const shadow = add(scene, new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }), [0, 0.002, 0.02], [-H, 0, 0]);
 
   /* ---------- mão: curvar dedos e encaixar o mastro no punho ---------- */
@@ -251,7 +316,7 @@ export function createAstronaut(canvas, opts = {}) {
     const fl = Math.sin(t * 1.65), fl2 = Math.sin(t * 1.65 + 0.8);
 
     // corpo
-    hips.position.y = 0.79 + F * (0.32 + 0.05 * fl) - W * 0.045 * Math.abs(Math.sin(ph)) + (st.hop || 0);
+    hips.position.y = 0.9 + F * (0.32 + 0.05 * fl) - W * 0.045 * Math.abs(Math.sin(ph)) + (st.hop || 0);
     body.rotation.y = (st.yaw || 0) + (st.spin || 0) * Math.PI * 2 + F * 0.32 + S * 0.18;
     body.rotation.x = F * (0.12 + 0.04 * fl2) + W * 0.06;
     body.rotation.z = F * (-0.1 + 0.05 * Math.sin(t * 1.2)) + (st.lean || 0);
@@ -283,7 +348,7 @@ export function createAstronaut(canvas, opts = {}) {
       const a = armL, s = 1;
       const bob = 0.05 * fl;
       // erguida
-      const ux = -0.3, uy = 0, uz = s * (1.28 + bob), ex = -1.3, ey = s * H, wx = 0, wy = 0, wz = 0;
+      const ux = -0.3, uy = 0, uz = s * (1.08 + bob), ex = -1.45, ey = s * H, wx = 0, wy = 0, wz = 0;
       // baixa (antebraço à frente, mastro em pé)
       const dx = W * 0.35 * Math.sin(ph), dy = 0, dz = s * 0.22, lex = -1.45, ley = 0;
       a.sh.rotation.set(lerp(dx, ux, U), lerp(dy, uy, U), lerp(dz, uz, U));
@@ -304,6 +369,19 @@ export function createAstronaut(canvas, opts = {}) {
       for (let i = 0; i < p.count; i++) { const x = b[i * 3], y = b[i * 3 + 1], k = x / 0.62; p.array[i * 3 + 2] = Math.sin(x * 9 - t * 6.5 + y * 2) * 0.05 * k + Math.sin(x * 4 - t * 3.1) * 0.03 * k; p.array[i * 3 + 1] = y - k * k * 0.04 * (1 + 0.3 * Math.sin(t * 2)); }
       p.needsUpdate = true; f.geo.computeVertexNormals();
     }
+    // anel holográfico de pouso
+    holoRings.forEach((r, i) => { const k = ((t * 0.6 + i / 3) % 1); r.scale.setScalar(0.7 + k * 0.9); r.material.opacity = S * 0.55 * (1 - k); });
+    holoTicks.material.opacity = S * 0.25; holoTicks.rotation.z = t * 0.4;
+    // jatos dos propulsores
+    {
+      const on = F * (0.55 + 0.45 * Math.max(0, Math.sin(t * 2.3))) + (st.hop ? 0.5 : 0);
+      for (let i = 0; i < NP; i++) {
+        const side = i % 2 ? 1 : -1, age = (t * 2.2 + i / NP * 1.7) % 1, j = Math.sin(i * 12.9898) * 0.5;
+        jetPos[i * 3] = side * 0.13 + j * 0.04 * age; jetPos[i * 3 + 1] = -0.37 - age * 0.55; jetPos[i * 3 + 2] = -0.04 - age * 0.12 + Math.cos(i * 7.1) * 0.03 * age;
+        const c = on * (1 - age) * (1 - age); jetCol[i * 3] = c; jetCol[i * 3 + 1] = c * 0.72; jetCol[i * 3 + 2] = c * 0.42;
+      }
+      jetGeo.attributes.position.needsUpdate = true; jetGeo.attributes.color.needsUpdate = true;
+    }
     shadow.material.opacity = S * 0.9; shadow.scale.setScalar(1 - 0.15 * W * Math.abs(Math.sin(ph)));
     beacon.material.color.setHSL(0.07, 1, 0.55 + 0.25 * Math.max(0, Math.sin(t * 3)));
   }
@@ -323,7 +401,7 @@ function siteMascot() {
   const EQUIPE = /^\/equipe-maximus/.test(location.pathname);
   const BEMVINDO = EQUIPE ? ["Seja bem-vindo! 👋", "Eu sou o astronauta Wyguivan Reyller 🚀", "Venha decolar com a Equipe Maximus! 💪"]
     : ["Seja bem-vindo! 👋", "Eu sou o astronauta Wyguivan Reyller 🚀", "Estou aqui para te ajudar a encontrar seu imóvel! 🏡"];
-  const PAISES = [{ id: "br", ola: "Olá, Brasil! 🇧🇷" }, { id: "us", ola: "Hello, USA! 🇺🇸" }, { id: "pt", ola: "Olá, Portugal! 🇵🇹" }, { id: "py", ola: "¡Hola, Paraguay! 🇵🇾" }];
+  const PAISES = [{ id: "br", ola: "Olá, Brasil! 🇧🇷" }, { id: "us", ola: "Hello, USA! 🇺🇸" }, { id: "pt", ola: "Olá, Portugal! 🇵🇹" }, { id: "py", ola: "¡Hola, Paraguay! 🇵🇾" }, { id: "ae", ola: "⁧مرحباً دبي!⁩ 🇦🇪 Olá, Dubai!" }];
   const FRASES = EQUIPE ? ["Já pensou em crescer de verdade?", "Treinamento toda semana! 📚", "O pódio é o nosso lugar de morada! 🏆", "Agende um café comigo! ☕"]
     : ["Já pensou?", "Já pensou... no imóvel dos seus sonhos?", "Que oportunidade é essa?!", "Não perca essa oportunidade!", "Fale comigo no WhatsApp! 🚀"];
   const SECOES = { lancamentos: "Lançamentos imperdíveis! ✨", loteamentos: "Já pensou no seu lote? 🏡", condominios: "Condomínios fechados! 🔒", "alto-padrao": "Alto padrão... já pensou? 💎", finder: "Busque seu imóvel aqui 🔎", equipe: "Conheça a Equipe Maximus! 💪", contato: "Fale comigo! 👋", galeria: "Olha que lindo! 😍", video: "Dá o play! 🎬", unidades: "Escolha a sua unidade! 📐", tipologias: "Escolha a sua planta! 📐", apartamento: "Pensado para você! 🛋️", lazer: "Lazer completo! 🏊", localizacao: "Localização top! 📍", local: "Localização top! 📍", quero: "Garanta o seu agora! 🚀", porque: "Aqui o resultado é treinado! 💪", conquistas: "A próxima conquista é sua! 🏆", oferece: "Tudo para você vender mais! 🚀", agendar: "Bora tomar um café? ☕" };
@@ -477,7 +555,7 @@ function siteMascot() {
     let sp = 0; if (spinT >= 0) { spinT += dt / 1.3; const k = Math.min(1, spinT); sp = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; if (spinT >= 1) { spinT = -1; sp = 0; } }
     hop *= Math.exp(-dt * 3);
     const w = box.clientWidth, h = box.clientHeight;
-    A.frame(w, h, Math.min(2, devicePixelRatio || 1), [0.14, 1.38, 0], 7.0);
+    A.frame(w, h, Math.min(2, devicePixelRatio || 1), [0.3, 1.42, 0], 7.4);
     A.pose({ t: reduce ? 0 : t, stand: S.stand, walk: S.walk, phase: S.phase, wave: S.wave, flagUp: S.flagUp, spin: sp, yaw: S.yaw, look: S.look, lean: S.lean, hop: Math.sin(hop * 20) * hop });
     A.render();
     box.style.transform = `translateX(${(-S.x).toFixed(1)}px)`;

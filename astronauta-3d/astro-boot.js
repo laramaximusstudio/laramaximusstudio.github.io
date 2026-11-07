@@ -2,7 +2,7 @@
    Se o 3D não abrir (aparelho antigo, sem WebGL ou falha de rede), carrega o astronauta 2D antigo. */
 (function () {
   if (window.__astroBoot) return; window.__astroBoot = true;
-  var V3D = "/astronauta3d.js?v=1";
+  var V3D = "/astronauta3d.js?v=2";
   var done = false;
   function fallback() {
     if (done) return; done = true;

@@ -51,7 +51,10 @@ e como trabalhamos. Atualize sempre que algo mudar (novo lançamento, novo link,
   carregado por `public/astro-boot.js` (no `app/layout.tsx`). Flutua, acena, segura a bandeira
   com a mão fechada no mastro, pousa, fica em pé e caminha. Logo MyBroker é um patch no peito.
 - Se o aparelho não roda 3D, volta sozinho para o astronauta 2D antigo (`astronauta.js`).
-- Cópia do código em `astronauta-3d/` neste repositório. O mesmo modelo é usado nos vídeos.
+- Versão 2 (07/11/2026, só na landpage): proporção adulta, tecido com trama, viseira dourada
+  espelhada, lanternas no capacete, painel no peito, jatos na mochila e anel holográfico no pouso.
+- Bandeiras e saudações: Brasil, EUA, Portugal, Paraguai e Dubai (em árabe: "مرحباً دبي! Olá, Dubai!").
+- Cópia do código em `astronauta-3d/` neste repositório. Os vídeos já publicados usam a versão 1.
 
 ## Vídeos (padrão do Wyguivan)
 
