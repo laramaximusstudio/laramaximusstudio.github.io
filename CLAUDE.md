@@ -45,6 +45,14 @@ e como trabalhamos. Atualize sempre que algo mudar (novo lançamento, novo link,
 - Book do cliente e fotos oficiais: arquivos.ebm.com.br (pasta "Parque América Trancoso").
   Esse site fica bloqueado no ambiente na nuvem: pedir ao Wyguivan para anexar o PDF ou as fotos.
 
+## Mascote astronauta (landpage)
+
+- Desde 07/11/2026 o astronauta da landpage é 3D (three.js): `public/astronauta3d.js`,
+  carregado por `public/astro-boot.js` (no `app/layout.tsx`). Flutua, acena, segura a bandeira
+  com a mão fechada no mastro, pousa, fica em pé e caminha. Logo MyBroker é um patch no peito.
+- Se o aparelho não roda 3D, volta sozinho para o astronauta 2D antigo (`astronauta.js`).
+- Cópia do código em `astronauta-3d/` neste repositório. O mesmo modelo é usado nos vídeos.
+
 ## Vídeos (padrão do Wyguivan)
 
 - Vertical 1080x1920, **no máximo 30 segundos**, com música, para WhatsApp, Instagram e TikTok.
