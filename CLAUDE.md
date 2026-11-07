@@ -25,7 +25,7 @@ e como trabalhamos. Atualize sempre que algo mudar (novo lançamento, novo link,
 
 ## Landpage (Latitude Pages)
 
-- Existe **uma única landpage**: https://wyguivan-reyller.latitude.app.br
+- Existe **uma única landpage**: https://wyguivan.latitude.app.br
   (projeto "Wyguivan Reyller · Equipe Maximus").
 - Todo lançamento novo entra **dentro dela**, em `/lancamentos/{slug}`
   (código em `app/lancamentos/{slug}/page.tsx` e cadastro em `lib/lancamentos.ts`).
@@ -33,7 +33,17 @@ e como trabalhamos. Atualize sempre que algo mudar (novo lançamento, novo link,
 - Lançamentos hoje: Parque América Trancoso, Logic Modern Life, Ryokan Flamboyant,
   Paradizzo e o loteamento Encontro das Águas.
 - O projeto separado do Trancoso foi apagado (o Trancoso agora vive em
-  https://wyguivan-reyller.latitude.app.br/lancamentos/parque-america-trancoso).
+  https://wyguivan.latitude.app.br/lancamentos/parque-america-trancoso).
+- ID do projeto na Latitude: cb5c278b-6b5f-48f7-9160-d0e45bad6aa3.
+
+## Astronauta (mascote da landpage)
+
+- Astronauta 3D "Wyguivan Reyller" que voa, acena, segura bandeira, pousa e fala por balões.
+- Carregado por `public/astro-boot.js`. A versão atual (mangueiras laranjas + fogo realista
+  nos propulsores, 07/11/2026) fica nos arquivos do projeto: `astro/astronauta3d-20261107.js`.
+  Para atualizar: subir um arquivo com nome novo (o servidor guarda cache) e trocar o V3D no astro-boot.
+- Pedido em andamento: fazer ele falar com voz de IA realista (ElevenLabs), depois do 1º toque.
+  A primeira chave salva deu "inválida"; falta o Wyguivan mandar uma chave nova.
 
 ## Parque América Trancoso (EBM + Tropical)
 
