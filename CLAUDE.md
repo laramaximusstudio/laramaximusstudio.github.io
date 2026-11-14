@@ -35,6 +35,14 @@ e como trabalhamos. Atualize sempre que algo mudar (novo lançamento, novo link,
 - O projeto separado do Trancoso foi apagado (o Trancoso agora vive em
   https://wyguivan-reyller.latitude.app.br/lancamentos/parque-america-trancoso).
 
+## Área da equipe (gestor)
+
+- Painel da equipe: /equipe-maximus/painel (senha gestor "maximus", corretores "maximus2026").
+- **A Matemática da Venda**: /equipe-maximus/matematica — calculadora para reunião
+  (meta → vendas, propostas, visitas, conversas e leads por mês/semana/dia; esforço → ganho;
+  melhorar o funil; meta da equipe). Só entra com a senha de gestor. Botão no topo do painel.
+  Código: app/equipe-maximus/matematica/page.tsx + public/matematica.js.
+
 ## Parque América Trancoso (EBM + Tropical)
 
 - Aparecida de Goiânia, em frente ao Parque Elmar Arantes Cabral, perto do Buriti Shopping.
